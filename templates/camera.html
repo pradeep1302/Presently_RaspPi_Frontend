@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+    <style>
+        /* Basic styling for the body */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        /* Styling for the video feed */
+        #video-feed {
+            width: 640px; /* Adjust the width as necessary */
+            height: 480px; /* Adjust the height as necessary */
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        /* Styling for the main menu button */
+        .menu-button {
+            font-size: 24px;
+            padding: 15px 30px;
+            background-color: #dc3545; /* Red for the menu button */
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            margin-top: 20px;
+        }
+
+        .menu-button:hover {
+            background-color: #c82333;
+        }
+
+        .menu-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <h2>Live Attendance Feed</h2>
+    <img src="/video_feed" id="video-feed" alt="Live Video">
+    <form action="/" method="GET">
+        <button type="submit" class="menu-button">Go to Main Menu</button>
+    </form>
+</body>
+</html>

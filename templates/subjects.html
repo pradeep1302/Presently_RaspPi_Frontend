@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Subject</title>
+    <style>
+        /* Basic styling for the body */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        /* Styling for the main container */
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        /* Styling for the subject buttons */
+        .subject-button {
+            font-size: 24px;
+            width: 100%;
+            padding: 20px;
+            margin: 10px 0;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .subject-button:hover {
+            background-color: #0056b3;
+        }
+
+        .subject-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Styling for the main menu button */
+        .menu-button {
+            font-size: 24px;
+            width: 100%;
+            padding: 20px;
+            margin: 10px 0;
+            background-color: #dc3545; /* Red for the menu button */
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .menu-button:hover {
+            background-color: #c82333;
+        }
+
+        .menu-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Select a Subject</h2>
+        <form method="POST">
+            {% for subject in subjects %}
+                <button type="submit" class="subject-button" name="subject_id" value="{{ subject._id }}">
+                    {{ subject.name }} <!-- Assuming subject has 'id' and 'name' attributes -->
+                </button>
+            {% endfor %}
+        </form>
+        <!-- Button to go to the main menu -->
+        <form action="/" method="GET">
+            <button type="submit" class="menu-button">Go to Main Menu</button>
+        </form>
+    </div>
+</body>
+</html>

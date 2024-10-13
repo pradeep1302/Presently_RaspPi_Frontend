@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Code</title>
+    <style>
+        /* Basic styling for the body */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        /* Styling for the main container */
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        /* Styling for the input field */
+        #code-input {
+            font-size: 28px;
+            text-align: center;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #code-input:focus {
+            border-color: #007bff;
+        }
+
+        /* Numpad styling */
+        #numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .numpad-button {
+            font-size: 24px;
+            width: 100%;
+            padding: 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .numpad-button:hover {
+            background-color: #0056b3;
+        }
+
+        .numpad-button:active {
+            transform: scale(0.95);
+        }
+
+
+        .clear-button {
+            background-color: #dc3545;
+        }
+
+        .clear-button:hover {
+            background-color: #c82333;
+        }
+        .submit-button {
+            background-color: #28a745;
+        }
+
+        .submit-button:hover {
+            background-color: #28a745;
+        }
+    </style>
+    <script>
+        // JavaScript to handle button clicks
+        function appendNumber(number) {
+            const inputField = document.getElementById("code-input");
+            if (inputField.value.length < 5) {
+                inputField.value += number;
+            }
+        }
+
+        function clearInput() {
+            document.getElementById("code-input").value = "";
+        }
+        function handleSubmit(event) {
+            // Clear the input field after a short delay to allow form submission
+            setTimeout(clearInput, 100); // Adjust the delay as necessary
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Enter Your 5-Digit Code</h2>
+        <form method="POST" onsubmit="handleSubmit(event)">
+            <input type="text" id="code-input" name="code" maxlength="5" readonly>
+            <div id="numpad">
+                <button type="button" class="numpad-button" onclick="appendNumber('1')">1</button>
+                <button type="button" class="numpad-button" onclick="appendNumber('2')">2</button>
+                <button type="button" class="numpad-button" onclick="appendNumber('3')">3</button>
+                <button type="button" class="numpad-button" onclick="appendNumber('4')">4</button>
+                <button type="button" class="numpad-button" onclick="appendNumber('5')">5</button>
+                <button type="button" class="numpad-button" onclick="appendNumber('6')">6</button>
+                <button type="button" class="numpad-button" onclick="appendNumber('7')">7</button>
+                <button type="button" class="numpad-button" onclick="appendNumber('8')">8</button>
+                <button type="button" class="numpad-button" onclick="appendNumber('9')">9</button>
+                <button type="button" class="numpad-button clear-button" onclick="clearInput()">C</button>
+                <button type="button" class="numpad-button" onclick="appendNumber('0')">0</button>
+                <button type="submit" class="numpad-button submit-button">Submit</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
