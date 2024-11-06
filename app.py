@@ -4,6 +4,7 @@ import requests
 import face_recognition
 import numpy as np
 import time
+import multiprocessing
 
 app = Flask(__name__)
 
@@ -46,9 +47,111 @@ def select_subject():
                 global student_encodings
                 student_encodings = response.json().get("student")
                 print(student_encodings)
-                return redirect(url_for("camera_feed"))
+                start_video_feed()
+                # return redirect(url_for("camera_feed"))
         return "Please select a subject."
     return render_template("subjects.html", subjects=subjects)
+
+
+# Global variable to control video feed
+stop_video_feed = False
+
+# Mouse callback function
+
+
+def mouse_callback(event, x, y, flags, param):
+    global stop_video_feed
+    button_x, button_y, button_width, button_height = 50, 50, 200, 50
+
+    if event == cv2.EVENT_LBUTTONDOWN:  # Check if left mouse button is pressed
+        if (button_x <= x <= button_x + button_width) and (button_y <= y <= button_y + button_height):
+            stop_video_feed = True  # Set the flag to stop video feed
+
+
+def start_video_feed():
+    global stop_video_feed
+    stop_video_feed = False  # Reset the stop flag each time the function is called
+    cap = cv2.VideoCapture(0)  # Start capturing from the USB camera
+
+    cap.set(3, 752)
+    cap.set(4, 416)
+
+
+    # Create a named window for full-screen display
+    cv2.namedWindow("Video Feed", cv2.WND_PROP_FULLSCREEN)
+    cv2.setWindowProperty(
+        "Video Feed", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    # Set the window to be topmost (you can try setting it again in the loop)
+    cv2.setWindowProperty("Video Feed", cv2.WND_PROP_TOPMOST, 1)
+
+    # Register the mouse callback function
+    cv2.setMouseCallback("Video Feed", mouse_callback)
+
+    # Define button properties
+    button_x, button_y, button_width, button_height = 50, 50, 200, 50
+    button_color = (0, 0, 255)  # Red color in BGR
+    button_text = "Stop Video"
+    process_this_frame = True
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        # Draw the button on the frame
+        cv2.rectangle(frame, (button_x, button_y), (button_x +
+                      button_width, button_y + button_height), button_color, -1)
+        cv2.putText(frame, button_text, (button_x + 10, button_y + 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        
+        
+        if process_this_frame:
+            img = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            faceCurFrame = face_recognition.face_locations(img)
+            print(faceCurFrame)
+            for face in faceCurFrame:
+                face_encodings = face_recognition.face_encodings(
+                    img, faceCurFrame)
+
+        # recognized_students = []
+
+        # for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
+            # cv2.rectangle(frame, (left, top),
+            #                     (right, bottom), (0, 255, 0), 2)
+            # match_found = False
+            # for student in student_encodings:
+            #     known_encoding = student["encoding"]
+            #     matches = face_recognition.compare_faces([known_encoding], face_encoding, tolerance=0.6)
+            #     if matches[0]:  # If a match is found
+            #         recognized_students.append(student["name"])
+            #         match_found = True
+            #         # Draw a green box around the matched face
+            #         cv2.rectangle(frame, (left, top),
+            #                     (right, bottom), (0, 255, 0), 2)
+            #         # Label the face with the student's name
+            #         cv2.putText(frame, student["name"], (left, top - 10),
+            #                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            #         break
+            #     if not match_found:
+            #         cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            #         cv2.putText(frame, "Unknown", (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        # Display the frame
+        cv2.imshow("Video Feed", frame)
+
+        # Check if the stop flag is set
+        if stop_video_feed:
+            break
+
+        # For quitting the live feed, press 'q'
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+
+
 
 # Route for displaying the live camera feed
 @app.route("/camera")
@@ -57,12 +160,12 @@ def camera_feed():
 
 
 
-def handleAttendence():
-    rgb_frame = cv2.imread("static/cam.png")
-    face_locations = face_recognition.face_locations(rgb_frame)
-    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+# def handleAttendence(frame):
+#     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#     face_locations = face_recognition.face_locations(rgb_frame)
+#     face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
-    recognized_students = []
+#     recognized_students = []
 
     # for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
     #     match_found = False
@@ -86,14 +189,12 @@ def handleAttendence():
 # Video streaming generator function
 def generate_video_feed():
     camera = cv2.VideoCapture(0)
+    camera.set(3, 752)
+    camera.set(4, 416)
     while True:
         success, frame = camera.read()
         if not success:
             break
-        img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        cv2.imwrite("static/cam.png", img)
-        handleAttendence()
-        time.sleep(0.1)
         # Perform face detection and recognition
         # rgb_frame = frame[:, :, ::-1]  # Convert BGR to RGB
         # face_locations = face_recognition.face_locations(rgb_frame)
