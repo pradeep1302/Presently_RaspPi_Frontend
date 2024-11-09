@@ -46,9 +46,9 @@ def select_subject():
             if response.status_code == 200:
                 global student_encodings
                 student_encodings = response.json().get("student")
-                print(student_encodings)
-                start_video_feed()
-                # return redirect(url_for("camera_feed"))
+                # print(student_encodings)
+                # start_video_feed()
+                return redirect(url_for("camera_feed"))
         return "Please select a subject."
     return render_template("subjects.html", subjects=subjects)
 
@@ -186,15 +186,81 @@ def camera_feed():
     #             cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
     #             cv2.putText(frame, "Unknown", (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
+
+# Initialize list of present students
+present_students = []
+
+def handleAttendence(frame, known_encodings, known_metadata):
+    rgb_frame = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
+    rgb_frame = cv2.cvtColor(rgb_frame, cv2.COLOR_BGR2RGB)
+    face_locations = face_recognition.face_locations(rgb_frame)
+    print(face_locations)
+    if not face_locations:
+        return
+    
+    
+    # for face in face_locations:
+    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+        
+
+
+# Detect faces and compute encodings only if faces are detected
+
+# Skip processing if no face locations were detected
+# if not face_locations:
+#     continue
+
+# # Ensure face encodings are correctly calculated
+# try:
+#     face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+# except TypeError as e:
+#     print("Error computing face descriptor:", e)
+#     continue  # Skip this frame if there's an error
+
+# Detect faces and compute encodings in the frame
+
+
+    for face_encoding, face_location in zip(face_encodings, face_locations):
+        # Compare with known encodings
+        matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.6)
+        name = "Unknown"
+        studentId = None
+        
+        # Find the best match for the detected face
+        if True in matches:
+            match_index = matches.index(True)
+            name = known_metadata[match_index]['name']
+            studentId = known_metadata[match_index]['studentId']
+            
+            # Add student to present list if not already marked
+            if studentId and studentId not in [student['studentId'] for student in present_students]:
+                present_students.append({'name': name, 'studentId': studentId})
+                print(present_students)
+                
+        # Draw a rectangle and label around the detected face
+        # top, right, bottom, left = face_location
+        # cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+        # cv2.putText(frame, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
 # Video streaming generator function
 def generate_video_feed():
+    known_encodings = [student['faceData'] for student in student_encodings if student['faceData']]
+    known_metadata = [{'name': student['name'], 'studentId': student['studentId']} for student in student_encodings if student['faceData']]
+    
+    print(known_encodings)
+    print(known_metadata)
+    
     camera = cv2.VideoCapture(0)
     camera.set(3, 752)
     camera.set(4, 416)
+    
     while True:
         success, frame = camera.read()
         if not success:
             break
+        
+        handleAttendence(frame, known_encodings, known_metadata)
+        
         # Perform face detection and recognition
         # rgb_frame = frame[:, :, ::-1]  # Convert BGR to RGB
         # face_locations = face_recognition.face_locations(rgb_frame)
@@ -222,6 +288,11 @@ def generate_video_feed():
         #                       (right, bottom), (0, 0, 255), 2)
         #             cv2.putText(frame, "Unknown", (left, top - 10),
         #                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        
+        
+        # Convert frame from BGR to RGB for face_recognition processing
+        
+        
         _, buffer = cv2.imencode(".jpg", frame)
         frame_bytes = buffer.tobytes()
 
