@@ -68,7 +68,11 @@ def mouse_callback(event, x, y, flags, param):
             stop_video_feed = True  # Set the flag to stop video feed
 
 
+# Initialize list of present students
+present_students = []
 def start_video_feed():
+    known_encodings = [student['faceData'] for student in student_encodings if student['faceData']]
+    known_metadata = [{'name': student['name'], 'studentId': student['studentId']} for student in student_encodings if student['faceData']]
     global stop_video_feed
     stop_video_feed = False  # Reset the stop flag each time the function is called
     cap = cv2.VideoCapture(0)  # Start capturing from the USB camera
@@ -104,14 +108,14 @@ def start_video_feed():
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         
         
-        if process_this_frame:
-            img = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            faceCurFrame = face_recognition.face_locations(img)
-            print(faceCurFrame)
-            for face in faceCurFrame:
-                face_encodings = face_recognition.face_encodings(
-                    img, faceCurFrame)
+        # if process_this_frame:
+        #     img = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
+        #     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        #     faceCurFrame = face_recognition.face_locations(img)
+        #     print(faceCurFrame)
+        #     for face in faceCurFrame:
+        #         face_encodings = face_recognition.face_encodings(
+        #             img, faceCurFrame)
 
         # recognized_students = []
 
@@ -137,6 +141,7 @@ def start_video_feed():
             #         cv2.putText(frame, "Unknown", (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         # Display the frame
         cv2.imshow("Video Feed", frame)
+        handleAttendence(frame,known_encodings,known_metadata)
 
         # Check if the stop flag is set
         if stop_video_feed:
@@ -187,8 +192,6 @@ def camera_feed():
     #             cv2.putText(frame, "Unknown", (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
 
-# Initialize list of present students
-present_students = []
 
 def handleAttendence(frame, known_encodings, known_metadata):
     rgb_frame = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
@@ -222,12 +225,15 @@ def handleAttendence(frame, known_encodings, known_metadata):
 
     for face_encoding, face_location in zip(face_encodings, face_locations):
         # Compare with known encodings
-        matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.6)
+        matches = face_recognition.compare_faces(known_encodings, face_encoding)
+        faceDis = face_recognition.face_distance(
+            known_encodings, face_encoding)
+        matchIndex = np.argmin(faceDis)
         name = "Unknown"
         studentId = None
         
         # Find the best match for the detected face
-        if True in matches:
+        if matches[matchIndex]:
             match_index = matches.index(True)
             name = known_metadata[match_index]['name']
             studentId = known_metadata[match_index]['studentId']
@@ -244,8 +250,17 @@ def handleAttendence(frame, known_encodings, known_metadata):
 
 # Video streaming generator function
 def generate_video_feed():
-    known_encodings = [student['faceData'] for student in student_encodings if student['faceData']]
-    known_metadata = [{'name': student['name'], 'studentId': student['studentId']} for student in student_encodings if student['faceData']]
+
+    # Extract valid encodings and metadata
+    known_encodings = [
+        student['faceData'] for student in student_encodings
+        if isinstance(student['faceData'], list) and len(student['faceData']) > 0 and isinstance(student['faceData'][0], (float, int))
+    ]
+    known_metadata = [
+        {'name': student['name'], 'studentId': student['studentId']}
+        for student in student_encodings
+        if isinstance(student['faceData'], list) and len(student['faceData']) > 0 and isinstance(student['faceData'][0], (float, int))
+    ]
     
     print(known_encodings)
     print(known_metadata)
