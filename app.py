@@ -238,7 +238,7 @@ def handleAttendence(frame, known_encodings, known_metadata):
 
     for face_encoding, face_location in zip(face_encodings, face_locations):
         # Compare with known encodings
-        matches = face_recognition.compare_faces(known_encodings, face_encoding)
+        matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.6)
         faceDis = face_recognition.face_distance(
             known_encodings, face_encoding)
         matchIndex = np.argmin(faceDis)
@@ -373,4 +373,4 @@ def submit_attendance():
         return jsonify({"message": "Error submitting attendance."}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
