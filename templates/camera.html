@@ -1,57 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance</title>
-    <style>
-        /* Basic styling for the body */
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-            margin: 0;
-        }
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Attendance</title>
+		<style>
+			/* General styling */
+			body {
+				font-family: Arial, sans-serif;
+				margin: 0;
+				padding: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				background-color: #f7f9fc;
+				color: #333;
+				height: 100vh;
+				overflow: hidden;
+			}
+			h2,
+			h3 {
+				color: #333;
+				margin: 10px 0;
+			}
 
-        /* Styling for the video feed */
-        #video-feed {
-            width: 640px; /* Adjust the width as necessary */
-            height: 480px; /* Adjust the height as necessary */
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-        }
+			/* Flex container for layout */
+			.content-wrapper {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				width: 100%;
+				height: calc(100vh - 100px); /* Leave space for buttons */
+				max-width: 1200px;
+				padding: 20px;
+				box-sizing: border-box;
+			}
 
-        /* Styling for the main menu button */
-        .menu-button {
-            font-size: 24px;
-            padding: 15px 30px;
-            background-color: #dc3545; /* Red for the menu button */
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-            margin-top: 20px;
-        }
+			/* Styling for video feed */
+			#video-feed {
+				width: 100%;
+				max-width: 400px;
+				height: auto;
+				border: 2px solid #ccc;
+				border-radius: 8px;
+				margin-right: 20px;
+				flex-shrink: 0;
+			}
 
-        .menu-button:hover {
-            background-color: #c82333;
-        }
+			/* Styling for attendance table */
+			.attendance-container {
+				width: 100%;
+				max-width: 600px;
+				min-height: 400px;
+				background-color: #fff;
+				border: 1px solid #ccc;
+				border-radius: 8px;
+				overflow: hidden;
+			}
 
-        .menu-button:active {
-            transform: scale(0.95);
-        }
-    </style>
-</head>
-<body>
-    <h2>Live Attendance Feed</h2>
-    <img src="/video_feed" id="video-feed" alt="Live Video">
-    <form action="/" method="GET">
-        <button type="submit" class="menu-button">Go to Main Menu</button>
-    </form>
-</body>
+			h3 {
+				padding: 0 10px;
+			}
+
+			#attendance-table {
+				width: 100%;
+				border-collapse: collapse;
+			}
+			#attendance-table th,
+			#attendance-table td {
+				padding: 10px;
+				border: 1px solid #ccc;
+				text-align: left;
+			}
+			#attendance-table th {
+				background-color: #4caf50;
+				color: white;
+			}
+			#attendance-table td {
+				background-color: #f2f2f2;
+			}
+
+			/* Scrollable table body */
+			.table-body-wrapper {
+				max-height: 300px;
+				overflow-y: auto;
+			}
+
+			/* Button styling */
+			.menu-button,
+			.submit-button {
+				background-color: #4caf50;
+				color: white;
+				padding: 10px 20px;
+				margin: 10px;
+				border: none;
+				border-radius: 5px;
+				cursor: pointer;
+				font-size: 16px;
+				transition: background-color 0.3s ease;
+			}
+			.menu-button {
+				background-color: #dc3545;
+			}
+			.submit-button:hover {
+				background-color: #45a049;
+			}
+			.menu-button:hover {
+				background-color: #c82333;
+			}
+
+			/* Responsive adjustments */
+			@media (max-width: 768px) {
+				.content-wrapper {
+					flex-direction: column;
+					height: auto;
+				}
+				#video-feed,
+				.attendance-container {
+					width: 90%;
+					max-width: 100%;
+				}
+				#video-feed {
+					margin-right: 0;
+					margin-bottom: 20px;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<h2>Live Attendance Feed</h2>
+
+		<div class="content-wrapper">
+			<img src="/video_feed" id="video-feed" alt="Live Video" />
+
+			<div class="attendance-container">
+				<h3>Present Students</h3>
+				<div class="table-body-wrapper">
+					<table id="attendance-table">
+						<thead>
+							<tr>
+								<th>Student ID</th>
+								<th>Name</th>
+							</tr>
+						</thead>
+						<tbody id="attendance-table-body">
+							<!-- Dynamic rows will be inserted here -->
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<div>
+			<button
+				type="button"
+				class="menu-button"
+				onclick="handleMainMenu()"
+			>
+				Go to Main Menu
+			</button>
+			<button
+				type="button"
+				class="submit-button"
+				onclick="submitAttendance()"
+			>
+				Submit Attendance
+			</button>
+		</div>
+
+		<script>
+			function handleMainMenu() {
+				window.location.href = "/";
+			}
+
+			// Function to fetch the list of present students and update the table
+			function fetchPresentStudents() {
+				fetch("/present_students")
+					.then((response) => response.json())
+					.then((data) => {
+						const tableBody = document.getElementById(
+							"attendance-table-body"
+						);
+						tableBody.innerHTML = ""; // Clear existing table rows
+
+						data.forEach((student) => {
+							const row = document.createElement("tr");
+							const idCell = document.createElement("td");
+							const nameCell = document.createElement("td");
+
+							idCell.textContent = student.studentId;
+							nameCell.textContent = student.name;
+
+							row.appendChild(idCell);
+							row.appendChild(nameCell);
+							tableBody.appendChild(row);
+						});
+					})
+					.catch((error) =>
+						console.error("Error fetching present students:", error)
+					);
+			}
+
+			// Function to send present students list to Node server
+			function submitAttendance() {
+				// Call the Flask endpoint to submit attendance
+				fetch("/submit_attendance")
+					.then((response) => response.json())
+					.then((data) => {
+						if (
+							data.message ===
+							"Attendance submitted successfully!"
+						) {
+							alert("Attendance submitted successfully!");
+							handleMainMenu();
+						} else {
+							alert("Failed to submit attendance.");
+						}
+					})
+					.catch((error) => {
+						console.error("Error submitting attendance:", error);
+						alert("Error submitting attendance.");
+					});
+			}
+
+			// Fetch present students every 5 seconds
+			setInterval(fetchPresentStudents, 5000);
+		</script>
+	</body>
 </html>

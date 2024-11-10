@@ -5,12 +5,16 @@ import face_recognition
 import numpy as np
 import time
 import multiprocessing
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 
 node_server_url = "http://localhost:4000"  # Replace with the actual IP and port
 
 # Global variables to store the fetched data
+teacherId = None
+selectedSubject = None
 subjects = []
 student_encodings = []
 
@@ -29,6 +33,8 @@ def home():
                 print(response.json())
                 global subjects
                 subjects = response.json().get("subjects", [])
+                global teacherId
+                teacherId = code
                 return redirect(url_for("select_subject"))
         return "Invalid code. Please enter a 5-digit number."
     return render_template("index.html")
@@ -46,6 +52,11 @@ def select_subject():
             if response.status_code == 200:
                 global student_encodings
                 student_encodings = response.json().get("student")
+                global selectedSubject
+                selectedSubject = subject
+                global present_students, present_students_ObjectId
+                present_students = []
+                present_students_ObjectId = []
                 # print(student_encodings)
                 # start_video_feed()
                 return redirect(url_for("camera_feed"))
@@ -70,6 +81,8 @@ def mouse_callback(event, x, y, flags, param):
 
 # Initialize list of present students
 present_students = []
+present_students_ObjectId = []
+
 def start_video_feed():
     known_encodings = [student['faceData'] for student in student_encodings if student['faceData']]
     known_metadata = [{'name': student['name'], 'studentId': student['studentId']} for student in student_encodings if student['faceData']]
@@ -237,10 +250,12 @@ def handleAttendence(frame, known_encodings, known_metadata):
             match_index = matches.index(True)
             name = known_metadata[match_index]['name']
             studentId = known_metadata[match_index]['studentId']
+            studentObjectId = known_metadata[match_index]['_id']
             
             # Add student to present list if not already marked
             if studentId and studentId not in [student['studentId'] for student in present_students]:
                 present_students.append({'name': name, 'studentId': studentId})
+                present_students_ObjectId.append(studentObjectId)
                 print(present_students)
                 
         # Draw a rectangle and label around the detected face
@@ -257,7 +272,7 @@ def generate_video_feed():
         if isinstance(student['faceData'], list) and len(student['faceData']) > 0 and isinstance(student['faceData'][0], (float, int))
     ]
     known_metadata = [
-        {'name': student['name'], 'studentId': student['studentId']}
+        {'name': student['name'], 'studentId': student['studentId'], '_id': student['_id']}
         for student in student_encodings
         if isinstance(student['faceData'], list) and len(student['faceData']) > 0 and isinstance(student['faceData'][0], (float, int))
     ]
@@ -319,6 +334,43 @@ def generate_video_feed():
 @app.route("/video_feed")
 def video_feed():
     return Response(generate_video_feed(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/present_students")
+def get_present_students():
+    return json.dumps(present_students), 200, {'Content-Type': 'application/json'}
+
+@app.route("/submit_attendance")
+def submit_attendance():
+    # Get the current date
+    current_date = datetime.now()
+    # Format the date as "dd/mm/yyyy"
+    date = current_date.strftime("%d/%m/%Y")
+    
+    # Prepare attendance data
+    attendance_data = {
+        "teacher": teacherId,
+        "subject": selectedSubject,
+        "date": date,
+        "presentStudents": present_students_ObjectId
+    }
+    
+    try:
+        # Send data to Node server
+        response = requests.post(
+            f"{node_server_url}/api/createlecture/",
+            headers={"Content-Type": "application/json"},
+            data=json.dumps(attendance_data)
+        )
+
+        # Check response from Node server
+        if response.status_code == 201:
+            return jsonify({"message": "Attendance submitted successfully!"}), 200
+        else:
+            return jsonify({"message": "Failed to submit attendance."}), 500
+    
+    except requests.exceptions.RequestException as e:
+        print("Error submitting attendance:", e)
+        return jsonify({"message": "Error submitting attendance."}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
